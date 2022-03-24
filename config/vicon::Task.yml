@@ -1,0 +1,79 @@
+--- name:vicon_hand_eye
+# transformation between segment cs (vicon data)and a choosen body fixed reference cs
+body_reference:
+  time:
+    microseconds: 0
+  sourceFrame: 'marker'
+  targetFrame: 'camera'
+  position:
+    data:
+    - 0.0193306
+    - 0.0464101
+    - -0.198378
+  cov_position:
+    data:
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+  orientation:
+    im:
+    - 0.010256
+    - 0.702918
+    - -0.711185
+    re: -0.00410556
+  cov_orientation:
+    data:
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+  velocity:
+    data:
+    - .nan
+    - .nan
+    - .nan
+  cov_velocity:
+    data:
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+  angular_velocity:
+    data:
+    - .nan
+    - .nan
+    - .nan
+  cov_angular_velocity:
+    data:
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+    - .nan
+
+# minimum time, in s, between two sequential samples arrive on pose_samples_in
+pose_samples_in_period: 0.0048
+# maximum latency, in seconds, of the stream aligner. The aligner will start dropping samples if the difference between the last output and last input is greater than this
+aggregator_max_latency: 0.5
+# minimum system time in s between two status readings
+stream_aligner_status_period: 1.0

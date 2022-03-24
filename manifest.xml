@@ -10,6 +10,6 @@
   </copyright>
   <license>LGPL v2 or later</license>
 
-  <depend package="drivers/vicon"/>
   <depend package="base/orogen/types"/>
+  <depend package="drivers/orogen/aggregator" />
 </package>

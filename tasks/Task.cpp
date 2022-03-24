@@ -1,20 +1,15 @@
-#include "Task.hpp"
+/* Generated from orogen/lib/orogen/templates/tasks/Task.cpp */
 
-#include <ViconDriver.hpp>
+#include "Task.hpp"
 
 using namespace vicon;
 
-
-namespace vicon {
-class TaskImpl
+Task::Task(std::string const& name)
+    : TaskBase(name)
 {
-public:
-    Driver driver;
-};
 }
 
-Task::Task(std::string const& name)
-    : TaskBase(name), impl( new TaskImpl() )
+Task::~Task()
 {
 }
 
@@ -25,6 +20,14 @@ Task::Task(std::string const& name)
     return lrbs;
 }
 
+void Task::pose_samples_inCallback(const base::Time &ts, const ::base::samples::RigidBodyState &pose_samples_in_sample)
+{
+    ::base::samples::RigidBodyState pose_samples_out = pose_samples_in_sample;
+    Eigen::Affine3d T_hand_eye( Eigen::Affine3d(_body_reference.value()) );
+
+    pose_samples_out.setTransform(pose_samples_in_sample.getTransform() * T_hand_eye);
+    _pose_samples.write(pose_samples_out);
+}
 
 /// The following lines are template definitions for the various state machine
 // hooks defined by Orocos::RTT. See Task.hpp for more detailed
@@ -32,91 +35,33 @@ Task::Task(std::string const& name)
 
 bool Task::configureHook()
 {
-    if (!_origin.value().hasValidPosition() || !_origin.value().hasValidOrientation() ) 
-        _origin.set(getZeroOrigin());
+    if (! TaskBase::configureHook())
+        return false;
 
     if (!_body_reference.value().hasValidPosition() || !_body_reference.value().hasValidOrientation() ) 
         _body_reference.set(getZeroOrigin());
 
-    uncertainty.reset(new vicon::ViconUncertainty<Eigen::Matrix4d>(_uncertainty_samples.value()));
-
     return true;
 }
-
 bool Task::startHook()
 {
-    bool result = impl->driver.connect( _host.value(), _port.value() );
-    if (result)
-        impl->driver.setAxesDir( _xdir.value(), _ydir.value(), _zdir.value() );
-    return result;
+    if (! TaskBase::startHook())
+        return false;
+    return true;
 }
-
 void Task::updateHook()
 {
-    const base::Time timeout( base::Time::fromSeconds(0) );
-    while( impl->driver.getFrame( timeout ) )
-    {
-	// origin is the origin2world transform for the neutral position/orientation
-	Eigen::Affine3d C_world2origin( Eigen::Affine3d(_origin.value()).inverse() );
-        Eigen::Affine3d C_segment2body( Eigen::Affine3d(_body_reference.value()) );
-
-	base::samples::RigidBodyState rbs;
-	rbs.time = impl->driver.getTimestamp();
-        rbs.sourceFrame = _source_frame.get();
-        rbs.targetFrame = _target_frame.get();
-
-        bool in_frame;
-        Eigen::Affine3d segment_transform = impl->driver.getSegmentTransform(
-        _subject.value(), _segment.value(), in_frame );
-
-        _unlabeled_markers.write( impl->driver.getUnlabeledMarkers() );
-
-        switch(impl->driver.getLastResult())
-        {
-            case Driver::INVALID_SUBJECT_NAME:
-                RTT::log(RTT::Error) << "subject " << _subject.value() << " not found!"
-                << RTT::endlog();
-                return;
-            case Driver::INVALID_SEGMENT_NAME:
-                RTT::log(RTT::Error) << "segment " << _segment.value() << " not found!" 
-                << RTT::endlog();
-                return;
-        }
-
-        if (in_frame || !_invalidate_occluded.get())
-        {
-            /** Fill the Rbs transformation **/
-            rbs.setTransform( C_world2origin * segment_transform * C_segment2body );
-
-            /** Set uncertainty in the rbs **/
-            if (_uncertainty_samples.value() > 0)
-            {
-                /** Push sample to the uncertainty **/
-                uncertainty->push(rbs.getTransform().matrix());
-
-                /** On line uncertainty **/
-                Eigen::Matrix4d transform_uncertainty = uncertainty->getVariance();
-
-                rbs.cov_position = transform_uncertainty.block<3,1>(0,3).asDiagonal();
-                rbs.cov_orientation = transform_uncertainty.block<3,3>(0,0);
-            }
-        }
-        else
-            rbs.invalidate();
-
-        if (in_frame || !_drop_occluded.get())
-	    _pose_samples.write( rbs );
-    }
+    TaskBase::updateHook();
 }
-
-// void Task::errorHook()
-// {
-// }
+void Task::errorHook()
+{
+    TaskBase::errorHook();
+}
 void Task::stopHook()
 {
-    impl->driver.disconnect();
+    TaskBase::stopHook();
 }
-// void Task::cleanupHook()
-// {
-// }
-
+void Task::cleanupHook()
+{
+    TaskBase::cleanupHook();
+}
